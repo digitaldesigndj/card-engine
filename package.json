@@ -15,5 +15,9 @@
     "nodemon": "^2.0.3",
     "uuid": "^8.0.0",
     "xstate": "^4.9.1"
+  },
+  "devDependencies": {
+    "@hapi/code": "^8.0.1",
+    "@hapi/lab": "^22.0.4"
   }
 }
