@@ -4,12 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon -r esm index.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@hapi/hapi": "^19.1.1",
-    "esm": "^3.2.25"
+    "esm": "^3.2.25",
+    "nodemon": "^2.0.3",
+    "uuid": "^8.0.0",
+    "xstate": "^4.9.1"
   }
 }
