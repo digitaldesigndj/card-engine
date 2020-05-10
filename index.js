@@ -129,7 +129,7 @@ server.route({
             deckID +
             " " +
             theCards.length +
-            //             JSON.stringify(theCards, null, 2) +
+            JSON.stringify(theCards, null, 2) +
             "</pre>"
         );
     },
