@@ -5,11 +5,14 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon -r esm index.js"
+    "start": "nodemon -r esm index.js",
+    "pretty": "prettier --write --tab-width 4 *.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@hapi/catbox": "^11.1.0",
+    "@hapi/catbox-redis": "^5.0.5",
     "@hapi/hapi": "^19.1.1",
     "esm": "^3.2.25",
     "nodemon": "^2.0.3",

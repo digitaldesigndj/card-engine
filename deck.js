@@ -20,6 +20,7 @@ const setupCards = (array) => {
             array.push({ suit: suits[suit_index], value: values[value_index] });
         }
     }
+    return array;
 };
 // http://bost.ocks.org/mike/shuffle/
 const shuffle = (array) => {
@@ -36,7 +37,6 @@ const shuffle = (array) => {
 };
 
 const Deck = {
-    cards: [],
     setupCards,
     shuffle,
 };
