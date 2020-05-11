@@ -154,16 +154,20 @@ server.route({
         } catch (err) {
             console.error(err);
         }
-        console.log( deck );
-//         const hand = deck.slice(0, number);
+        let deckArray = Object.values(deck);
+        const hand = new Array(number).join().split(',').map(i => { return deckArray.shift()});
+        // console.log( hand, deckArray );
         try {
-            await tedis.set(`deck-${deckID}`, JSON.stringify(deck));
+            await tedis.set(`deck-${deckID}`, JSON.stringify(deckArray));
         } catch (err) {
             console.error(err);
         }
-        console.log(deck.length, typeof deck);
-        console.log(number, deckID, hand);
-        return "<pre>" + JSON.stringify(hand, null, 2) + "</pre>";
+        // console.log(deckArray.length, typeof deckArray );
+        // console.log(number, deckID, hand);
+        return "<pre>" +
+        JSON.stringify(hand, null, 2) +
+        `cards left: ${deckArray.length}` +
+        "</pre>";
     },
 });
 
