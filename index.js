@@ -9,6 +9,8 @@ import CatboxRedis from "@hapi/catbox-redis";
 
 import { Tedis } from "tedis";
 
+const EXPIRE_BUMP = 60;
+
 // console.log(Deck.setupCards(Deck.cards));
 
 // const Hapi = require('@hapi/hapi');
@@ -90,12 +92,18 @@ server.route({
 });
 
 const decks_to_links = (deckKeys) => {
-    return deckKeys.map((key) => {
-        return `<li><a href="/deck/${key.replace(
-            "deck-",
-            ""
-        )}">${key}</a></li>`;
-    });
+    return (
+        "<ul>" +
+        deckKeys
+            .map((key) => {
+                return `<li><a href="/deck/${key.replace(
+                    "deck-",
+                    ""
+                )}">${key}</a></li>`;
+            })
+            .join("\n") +
+        "</ul>"
+    );
 };
 
 server.route({
@@ -103,13 +111,7 @@ server.route({
     path: "/decks",
     handler: async (request, h) => {
         try {
-            return (
-                "<ul>" +
-                decks_to_links(Object.values(await tedis.keys("deck-*"))).join(
-                    "\n"
-                ) +
-                "</ul>"
-            );
+            return decks_to_links(Object.values(await tedis.keys("deck-*")));
         } catch (err) {
             console.error(err);
         }
@@ -122,19 +124,29 @@ server.route({
     handler: async (request, reply) => {
         // !! VALIDATE THE UUIDv4
         const { deckID } = request.params;
-        console.log(deckID);
-        const theCards = JSON.parse(await tedis.get(`deck-${deckID}`));
-        return (
-            "<pre>" +
-            deckID +
-            " " +
-            theCards.length +
-            JSON.stringify(theCards, null, 2) +
-            "</pre>"
-        );
+        let validDeckId;
+        try {
+            validDeckId = await tedis.exists(`deck-${deckID}`);
+        } catch (err) {
+            console.log(error);
+        }
+        if (validDeckId) {
+            const theCards = JSON.parse(await tedis.get(`deck-${deckID}`));
+            await tedis.expire(`deck-${deckID}`, EXPIRE_BUMP);
+            //         return (
+            //             "<pre>" +
+            //             deckID +
+            //             " " +
+            //             theCards.length +
+            //             JSON.stringify(theCards, null, 2) +
+            //             "</pre>"
+            //         );
+            return theCards.length;
+        } else {
+            return "expired?";
+        }
     },
 });
-
 
 //♦♣♥♠
 
@@ -146,46 +158,65 @@ server.route({
     handler: async function (request, h) {
         console.log("add uuid, get some cards from deck");
         console.log("assign uuid to hand");
-        const deckID = request.params.deckID;
-        const number = parseInt(request.params.number, 10);
-        let deck;
+        const { deckID } = request.params;
+        let validDeckId;
         try {
-            deck = JSON.parse(await tedis.get(`deck-${deckID}`));
+            validDeckId = await tedis.exists(`deck-${deckID}`);
         } catch (err) {
-            console.error(err);
+            console.log(error);
         }
-        let deckArray = Object.values(deck);
-        const hand = new Array(number).join().split(',').map(i => { return deckArray.shift()});
-        // console.log( hand, deckArray );
-        try {
-            await tedis.set(`deck-${deckID}`, JSON.stringify(deckArray));
-        } catch (err) {
-            console.error(err);
+        if (validDeckId) {
+            const number = parseInt(request.params.number, 10);
+            let deck;
+            try {
+                deck = JSON.parse(await tedis.get(`deck-${deckID}`));
+            } catch (err) {
+                console.error(err);
+            }
+            let deckArray = Object.values(deck);
+            const hand = new Array(number)
+                .join()
+                .split(",")
+                .map((i) => {
+                    return deckArray.shift();
+                });
+            // console.log( hand, deckArray );
+            try {
+                await tedis.set(`deck-${deckID}`, JSON.stringify(deckArray));
+                await tedis.expire(`deck-${deckID}`, EXPIRE_BUMP);
+            } catch (err) {
+                console.error(err);
+            }
+            // console.log(deckArray.length, typeof deckArray );
+            // console.log(number, deckID, hand);
+            //         return (
+            //             "<pre>" +
+            //             JSON.stringify(hand, null, 2) +
+            //             `cards left: ${deckArray.length}` +
+            //             "</pre>"
+            //         );
+            return hand;
+        } else {
+            return "expired?";
         }
-        // console.log(deckArray.length, typeof deckArray );
-        // console.log(number, deckID, hand);
-        return "<pre>" +
-        JSON.stringify(hand, null, 2) +
-        `cards left: ${deckArray.length}` +
-        "</pre>";
     },
 });
 
-server.route({
-    method: "GET",
-    path: "/cards/{number}",
-    handler: (request, h) => {
-        console.log("add uuid, get some cards from deck");
-        console.log("assign uuid to hand");
-        const number = parseInt(request.params.number, 10);
-        console.log(number);
-        return (
-            "<pre>" +
-            JSON.stringify(Deck.shuffle(Deck.cards).slice(0, number), null, 2) +
-            "</pre>"
-        );
-    },
-});
+// server.route({
+//     method: "GET",
+//     path: "/cards/{number}",
+//     handler: (request, h) => {
+//         console.log("add uuid, get some cards from deck");
+//         console.log("assign uuid to hand");
+//         const number = parseInt(request.params.number, 10);
+//         console.log(number);
+//         return (
+//             "<pre>" +
+//             JSON.stringify(Deck.shuffle(Deck.cards).slice(0, number), null, 2) +
+//             "</pre>"
+//         );
+//     },
+// });
 
 server.route({
     method: "GET",
